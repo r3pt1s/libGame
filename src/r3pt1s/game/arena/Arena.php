@@ -12,5 +12,5 @@ abstract class Arena {
 
     abstract public function toArray(): array;
 
-    abstract public static function fromArray(array $data): ?static;
+    abstract public static function fromArray(array $data): ?self;
 }

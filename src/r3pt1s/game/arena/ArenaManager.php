@@ -2,6 +2,7 @@
 
 namespace r3pt1s\game\arena;
 
+use GlobalLogger;
 use InvalidArgumentException;
 use r3pt1s\game\libGame;
 
@@ -9,6 +10,18 @@ final class ArenaManager {
 
     /** @var array<Arena> */
     private array $arenas = [];
+
+    public function load(): void {
+        libGame::get()->getArenaProvider()?->load()
+            ->onCompletion(
+                function (array $arenas): void {
+                    $this->arenas = $arenas;
+                },
+                function (): void {
+                    GlobalLogger::get()->error("Failed to load arenas!");
+                }
+            );
+    }
 
     public function add(Arena $arena): void {
         if (!isset($this->arenas[$arena->getName()])) {
