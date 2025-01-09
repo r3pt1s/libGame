@@ -9,11 +9,15 @@ class GameStateHandler {
     private array $handlers = [];
 
     public function addHandler(GameState $gameState, Closure $handler): void {
-        $this->handlers[spl_object_hash($gameState)] = $handler;
+        $this->handlers[spl_object_id($gameState)] = $handler;
     }
 
     public function removeHandler(GameState $gameState): void {
-        if (isset($this->handlers[spl_object_hash($gameState)])) unset($this->handlers[spl_object_hash($gameState)]);
+        if (isset($this->handlers[spl_object_id($gameState)])) unset($this->handlers[spl_object_id($gameState)]);
+    }
+
+    public function removeAllHandler(): void {
+        $this->handlers = [];
     }
 
     public function callHandler(GameState $gameState, ...$args): void {
@@ -23,6 +27,6 @@ class GameStateHandler {
     }
 
     public function getHandler(GameState $gameState): ?Closure {
-        return $this->handlers[spl_object_hash($gameState)] ?? null;
+        return $this->handlers[spl_object_id($gameState)] ?? null;
     }
 }

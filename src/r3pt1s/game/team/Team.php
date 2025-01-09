@@ -3,6 +3,8 @@
 namespace r3pt1s\game\team;
 
 use pocketmine\player\Player;
+use r3pt1s\game\event\PlayerTeamJoinEvent;
+use r3pt1s\game\event\PlayerTeamLeaveEvent;
 
 final class Team {
 
@@ -16,11 +18,15 @@ final class Team {
     ) {}
 
     public function addPlayer(Player $player): void {
-        $this->players[] = $player;
+        ($ev = new PlayerTeamJoinEvent($this, $player))->call();
+        if (!$ev->isCancelled()) $this->players[] = $player;
     }
 
     public function removePlayer(Player $player): void {
-        if (in_array($player, $this->players)) unset($this->players[array_search($player, $this->players)]);
+        if (in_array($player, $this->players)) {
+            ($ev = new PlayerTeamLeaveEvent($this, $player))->call();
+            if (!$ev->isCancelled()) unset($this->players[array_search($player, $this->players)]);
+        }
     }
 
     public function isInTeam(Player $player): bool {

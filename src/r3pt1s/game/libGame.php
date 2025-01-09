@@ -4,13 +4,13 @@ namespace r3pt1s\game;
 
 use Closure;
 use GlobalLogger;
+use InvalidArgumentException;
 use LogicException;
 use pocketmine\player\Player;
 use pocketmine\plugin\Plugin;
 use r3pt1s\game\arena\Arena;
 use r3pt1s\game\arena\ArenaManager;
 use r3pt1s\game\arena\IArenaProvider;
-use r3pt1s\game\state\GameStateHandler;
 use r3pt1s\game\team\TeamManager;
 use Throwable;
 
@@ -19,7 +19,6 @@ final class libGame {
     private static ?self $instance = null;
     private static ?Plugin $pluginInstance = null;
     private ?Closure $gameCreationHandler;
-    private ?GameStateHandler $gameStateHandler;
     private ?TeamManager $teamManager;
     private ?ArenaManager $arenaManager;
     private ?IArenaProvider $arenaProvider = null;
@@ -35,19 +34,26 @@ final class libGame {
     }
 
     public function __construct() {
-        $this->gameStateHandler = new GameStateHandler();
         $this->teamManager = new TeamManager();
         $this->arenaManager = new ArenaManager();
-        $this->gameCreationHandler = fn(array $players, Arena $arena) => new Game($players, $arena);
+        $this->gameCreationHandler = fn(string $name, array $players, Arena $arena) => new Game($name, $players, $arena);
     }
 
     public function createGame(string $name, ...$args): Game|false {
         try {
-            return $this->games[$name] = ($this->gameCreationHandler)(...$args);
+            if (isset($this->games[$name])) return throw new InvalidArgumentException("A game with the name $name already exists.");
+            return $this->games[$name] = ($this->gameCreationHandler)($name, ...$args);
         } catch (Throwable $exception) {
             GlobalLogger::get()->logException($exception);
         }
         return false;
+    }
+
+    public function removeGame(Game $game): void {
+        if (isset($this->games[$game->getName()])) {
+            $game->getGameStateHandler()->removeAllHandler();
+            unset($this->games[$game->getName()]);
+        }
     }
 
     public function setGameCreationHandler(?Closure $gameCreationHandler): self {
@@ -58,10 +64,6 @@ final class libGame {
     public function setArenaProvider(?IArenaProvider $arenaProvider): self {
         $this->arenaProvider = $arenaProvider;
         return $this;
-    }
-
-    public function getGameStateHandler(): GameStateHandler {
-        return $this->gameStateHandler ??= new GameStateHandler();
     }
 
     public function getTeamManager(): TeamManager {

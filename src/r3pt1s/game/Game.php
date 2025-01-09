@@ -7,27 +7,30 @@ use pocketmine\Server;
 use r3pt1s\game\arena\Arena;
 use r3pt1s\game\event\GameStateChangeEvent;
 use r3pt1s\game\state\GameState;
+use r3pt1s\game\state\GameStateHandler;
 use r3pt1s\game\tick\GameTick;
 
 class Game {
 
     protected GameListener $listener;
     protected GameState $gameState;
-    protected GameTick $gameTick;
+    protected ?GameTick $gameTick = null;
     protected GameStorage $gameStorage;
+    protected GameStateHandler $gameStateHandler;
 
     /**
      * @param array<Player> $players
      */
     public function __construct(
+        protected string $name,
         protected array $players,
         protected Arena $arena,
         ?GameListener $gameListener = null
     ) {
         $this->listener = $gameListener ?? new GameListener();
-        $this->gameState = GameState::WAITING();
-        $this->gameTick = new GameTick(Server::getInstance()->getTick());
         $this->gameStorage = new GameStorage();
+        $this->gameStateHandler = new GameStateHandler();
+        $this->setGameState(GameState::WAITING());
     }
 
     public function broadcastMessage(string $message): void {
@@ -65,9 +68,14 @@ class Game {
     }
 
     public function setGameState(GameState $gameState): void {
+        if ($gameState === GameState::IN_GAME() && $this->gameTick === null) $this->gameTick = new GameTick(Server::getInstance()->getTick());
         (new GameStateChangeEvent($this, $this->gameState, $gameState))->call();
         $this->gameState = $gameState;
-        libGame::get()->getGameStateHandler()->callHandler($gameState);
+        $this->gameStateHandler->callHandler($gameState);
+    }
+
+    public function getName(): string {
+        return $this->name;
     }
 
     public function getListener(): GameListener {
@@ -78,12 +86,16 @@ class Game {
         return $this->gameState;
     }
 
-    public function getGameTick(): GameTick {
+    public function getGameTick(): ?GameTick {
         return $this->gameTick;
     }
 
     public function getGameStorage(): GameStorage {
         return $this->gameStorage;
+    }
+
+    public function getGameStateHandler(): GameStateHandler {
+        return $this->gameStateHandler;
     }
 
     public function getPlayerCount(): int {
