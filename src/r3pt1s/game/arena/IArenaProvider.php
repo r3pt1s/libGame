@@ -6,7 +6,7 @@ interface IArenaProvider {
 
     public function load(): void;
 
-    public function add(array $mapData): void;
+    public function add(array $arenaData): void;
 
     public function remove(string $name): void;
 
