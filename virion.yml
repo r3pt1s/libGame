@@ -1,0 +1,7 @@
+name: libGame
+authors:
+  - r3pt1s
+version: 1.0.0
+antigen: r3pt1s\game
+api:
+  - 5.0.0
